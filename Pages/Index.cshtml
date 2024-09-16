@@ -1,0 +1,152 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Employes manager";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Employes manager</h1>
+
+        <!-- CSV upload form -->
+        <form asp-page-handler="Upload" method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="fileInput" class="form-label">Upload CSV File</label>
+                <input class="form-control" type="file" id="fileInput" name="csvFile" />
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+
+        <!-- data table -->
+        <table class="table mt-5" data-sort-direction="asc">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Date of Birth</th>
+                    <th scope="col">Married</th>
+                    <th scope="col">Phone</th>
+                    <th scope="col">Salary</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var Employes in Model.Employes)
+                {
+                    <tr>
+                        <td>@Employes.Name</td>
+                        <td>@Employes.DateOfBirth.ToShortDateString()</td>
+                        <td>@Employes.Married</td>
+                        <td>@Employes.Phone</td>
+                        <td>@Employes.Salary.ToString("C")</td>
+                        <td>
+<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editModal-@Employes.Id">
+    Edit
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="editModal-@Employes.Id" tabindex="-1" aria-labelledby="editModalLabel-@Employes.Id" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel-@Employes.Id">Edit Employee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form asp-page-handler="Edit" method="post">
+                    <input type="hidden" name="Id" value="@Employes.Id" />
+                    <div class="mb-3">
+                        <label for="nameInput-@Employes.Id" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="nameInput-@Employes.Id" name="Name" value="@Employes.Name" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="dateOfBirthInput-@Employes.Id" class="form-label">Date of Birth</label>
+                        <input type="date" class="form-control" id="dateOfBirthInput-@Employes.Id" name="DateOfBirth" value="@Employes.DateOfBirth.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="marriedInput-@Employes.Id" class="form-label">Married</label>
+                        <select class="form-select" id="marriedInput-@Employes.Id" name="Married">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phoneInput-@Employes.Id" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="phoneInput-@Employes.Id" name="Phone" value="@Employes.Phone" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="salaryInput-@Employes.Id" class="form-label">Salary</label>
+                        <input type="number" step="0.01" class="form-control" id="salaryInput-@Employes.Id" name="Salary" value="@Employes.Salary" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+                            <form asp-page-handler="Delete" method="post" style="display:inline;">
+                                <input type="hidden" name="id" value="@Employes.Id" />
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JS sorting -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const table = document.querySelector('table');
+            const headers = table.querySelectorAll('th');
+
+            headers.forEach((header, index) => {
+                header.addEventListener('click', () => {
+                    sortTable(index);
+                });
+            });
+
+            function sortTable(columnIndex) {
+                const rowsArray = Array.from(table.querySelectorAll('tbody tr'));
+                const isAscending = table.getAttribute('data-sort-direction') === 'asc';
+
+                rowsArray.sort((a, b) => {
+                    const aText = a.children[columnIndex].textContent.trim();
+                    const bText = b.children[columnIndex].textContent.trim();
+
+                    const aValue = isNaN(aText) ? aText : parseFloat(aText);
+                    const bValue = isNaN(bText) ? bText : parseFloat(bText);
+
+                    if (aValue > bValue) return isAscending ? 1 : -1;
+                    if (aValue < bValue) return isAscending ? -1 : 1;
+                    return 0;
+                });
+
+                // Re-add sorted rows to table body
+                const tbody = table.querySelector('tbody');
+                tbody.innerHTML = '';
+                rowsArray.forEach(row => tbody.appendChild(row));
+
+                // Toggle sort direction
+                table.setAttribute('data-sort-direction', isAscending ? 'desc' : 'asc');
+            }
+        });
+    </script>
+
+</body>
+</html>
